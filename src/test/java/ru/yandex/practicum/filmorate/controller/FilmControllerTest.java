@@ -122,7 +122,8 @@ class FilmControllerTest {
         updateFilm.setDescription("U".repeat(201));
         filmController.create(film);
         assertThrows(ValidationException.class,
-                () -> filmController.update(updateFilm), "Описание более 200 символов должно приводить к исключению");
+                () -> filmController.update(updateFilm),
+                "Описание более 200 символов должно приводить к исключению");
 
     }
 
@@ -131,7 +132,8 @@ class FilmControllerTest {
         updateFilm.setReleaseDate(LocalDate.of(1895, 12, 27));
         filmController.create(film);
         assertThrows(ValidationException.class,
-                () -> filmController.update(updateFilm), "Описание более 200 символов должно приводить к исключению");
+                () -> filmController.update(updateFilm),
+                "Описание более 200 символов должно приводить к исключению");
 
     }
 

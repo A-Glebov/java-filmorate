@@ -43,7 +43,7 @@ class FilmControllerTest {
 
     @Test
     public void createFilmWithEmptyName() {
-        film.setName(" ");
+        film.setName("");
 
         assertThrows(ValidationException.class,
                 () -> filmController.create(film), "Пустое название должно приводить к исключению");

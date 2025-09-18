@@ -118,7 +118,7 @@ class FilmControllerTest {
     }
 
     @Test
-    public void UpdateDescriptionLengthMore200() {
+    public void updateDescriptionLengthMore200() {
         updateFilm.setDescription("U".repeat(201));
         filmController.create(film);
         assertThrows(ValidationException.class,
@@ -128,7 +128,7 @@ class FilmControllerTest {
     }
 
     @Test
-    public void updateDateBefore28dec1895() {
+    public void updateDateBefore28Dec1895() {
         updateFilm.setReleaseDate(LocalDate.of(1895, 12, 27));
         filmController.create(film);
         assertThrows(ValidationException.class,

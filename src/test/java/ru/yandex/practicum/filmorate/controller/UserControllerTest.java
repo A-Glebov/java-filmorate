@@ -42,30 +42,6 @@ class UserControllerTest {
     }
 
     @Test
-    public void createUserWithEmptyEmail() {
-        user.setEmail("");
-
-        assertThrows(ValidationException.class,
-                () -> userController.create(user), "Пустой имейл должен приводить к исключению");
-    }
-
-    @Test
-    public void createUserWithInvalidEmail() {
-        user.setEmail("invalid.email");
-
-        assertThrows(ValidationException.class,
-                () -> userController.create(user), "Невалидный имейл должен приводить к исключению");
-    }
-
-    @Test
-    public void createUserWithInvalidLogin() {
-        user.setEmail("invalid login");
-
-        assertThrows(ValidationException.class,
-                () -> userController.create(user), "Невалидный логин должен приводить к исключению");
-    }
-
-    @Test
     public void createUserWithExistLogin() {
         User userWithExistLogin = User.builder()
                 .email("pochta@mail.ru")
@@ -90,15 +66,6 @@ class UserControllerTest {
     }
 
     @Test
-    public void createUserWithBirthdayInFuture() {
-        user.setBirthday(LocalDate.of(3000, 1, 1));
-
-        assertThrows(ValidationException.class,
-                () -> userController.create(user), "День рождения в будущем должен приводить к исключению");
-
-    }
-
-    @Test
     public void updateUserWitNonExistentId() {
         updateUser.setId(2L);
         assertThrows(NotFoundException.class,
@@ -119,36 +86,6 @@ class UserControllerTest {
         userController.update(updateUser);
 
         assertEquals(updateUser, user, "Данные пользователя не обновились");
-    }
-
-    @Test
-    public void updateUserWithInvalidEmail() {
-        userController.create(user);
-        updateUser.setId(1L);
-        updateUser.setEmail("invalid.email");
-
-        assertThrows(ValidationException.class,
-                () -> userController.update(updateUser), "Невалидный имейл должен вызвать исключение");
-    }
-
-    @Test
-    public void updateWithInvalidLogin() {
-        userController.create(user);
-        updateUser.setId(1L);
-        updateUser.setEmail("invalid login");
-
-        assertThrows(ValidationException.class,
-                () -> userController.update(updateUser), "Невалидный логин должен вызвать исключение");
-    }
-
-    @Test
-    public void updateWithBirthdayInFuture() {
-        userController.create(user);
-        updateUser.setId(1L);
-        updateUser.setBirthday(LocalDate.of(2030, 1, 1));
-
-        assertThrows(ValidationException.class,
-                () -> userController.update(updateUser), "Дата рождения в будущем должна вызвать исключение");
     }
 
 }

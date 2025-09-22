@@ -42,52 +42,11 @@ class FilmControllerTest {
     }
 
     @Test
-    public void createFilmWithEmptyName() {
-        film.setName("");
-
-        assertThrows(ValidationException.class,
-                () -> filmController.create(film), "Пустое название должно приводить к исключению");
-    }
-
-    @Test
-    public void createFilmWithNullName() {
-        film.setName(null);
-
-        assertThrows(ValidationException.class,
-                () -> filmController.create(film), "Пустое название должно приводить к исключению");
-    }
-
-    @Test
-    public void createFilmWithDescriptionLength201() {
-        film.setDescription("D".repeat(201));
-
-        assertThrows(ValidationException.class,
-                () -> filmController.create(film), "Описание более 200 символов должно приводить к исключению");
-    }
-
-    @Test
     public void createFilmWithDateBefore28dec1895() {
         film.setReleaseDate(LocalDate.of(1895, 12, 27));
 
         assertThrows(ValidationException.class,
                 () -> filmController.create(film), "Дата релиза ранее 28.12.1895 должна приводить к исключению");
-    }
-
-    @Test
-    public void createFilmWithDuration0() {
-        film.setDuration(0L);
-
-        assertThrows(ValidationException.class,
-                () -> filmController.create(film), "Продолжительность меньше 1 должно вызывать исключение");
-    }
-
-    @Test
-    public void updateFilmWithDescriptionLength201() {
-        filmController.create(film);
-        film.setDescription("D".repeat(201));
-
-        assertThrows(ValidationException.class,
-                () -> filmController.update(film), "Описание более 200 символов должно приводить к исключению");
     }
 
     @Test
@@ -118,16 +77,6 @@ class FilmControllerTest {
     }
 
     @Test
-    public void updateDescriptionLengthMore200() {
-        updateFilm.setDescription("U".repeat(201));
-        filmController.create(film);
-        assertThrows(ValidationException.class,
-                () -> filmController.update(updateFilm),
-                "Описание более 200 символов должно приводить к исключению");
-
-    }
-
-    @Test
     public void updateDateBefore28Dec1895() {
         updateFilm.setReleaseDate(LocalDate.of(1895, 12, 27));
         filmController.create(film);
@@ -153,15 +102,6 @@ class FilmControllerTest {
         filmController.update(updateFilm);
 
         assertEquals(updateFilm.getDuration(), film.getDuration(), "Дата релиза должна измениться");
-    }
-
-    @Test
-    public void updateInvalidDuration() {
-        updateFilm.setDuration(0L);
-        filmController.create(film);
-        assertThrows(ValidationException.class,
-                () -> filmController.update(updateFilm), "Продолжительность должна быть положительным числом");
-
     }
 
 }

@@ -1,15 +1,13 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -19,49 +17,26 @@ public class FilmController {
     private final Map<Long, Film> films = new HashMap<>();
 
     @GetMapping
-    public Collection<Film> findAll() {
+    public List<Film> findAll() {
         log.info("Получение всех фильмов");
-        return films.values();
+        return new ArrayList<>(films.values());
     }
 
     @PostMapping
-    public Film create(@RequestBody Film film) {
+    public Film create(@Valid @RequestBody Film film) {
         log.info("Добавление фильма");
-        if (film.getName() == null || film.getName().isEmpty()) {
-            String errorMessage = "Название не может быть пустым";
-            log.error("Ошибка валидации добавления фильма: {}", errorMessage);
-            throw new ValidationException(errorMessage);
-        }
-
-        if (film.getDescription().length() > 200) {
-            String errorMessage = "Максимальная длина описания - 200 символов";
-            log.error("Ошибка валидации добавления фильма: {}", errorMessage);
-            throw new ValidationException(errorMessage);
-        }
-
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            String errorMessage = "Дата релиза раньше 28 декабря 1895";
-            log.error("Ошибка валидации добавления фильма: {}", errorMessage);
-            throw new ValidationException(errorMessage);
-        }
-
-        if (film.getDuration() <= 0) {
-            String errorMessage = "Продолжительность не может быть неположительным числом";
-            log.error("Ошибка валидации добавления фильма: {}", errorMessage);
-            throw new ValidationException(errorMessage);
-        }
-
         film.setId(getNextId());
+        film.dateReleaseValidate();
         films.put(film.getId(), film);
         log.info("Фильм успешно добавлен");
-        return film;
 
+        return film;
     }
 
     @PutMapping
-    public Film update(@RequestBody Film updateFilm) {
+    public Film update(@Valid @RequestBody Film updatedFilm) {
         log.info("Обновление данных фильма");
-        Long id = updateFilm.getId();
+        Long id = updatedFilm.getId();
 
         if (id == null) {
             String errorMessage = "Id должен быть указан";
@@ -69,52 +44,21 @@ public class FilmController {
             throw new ValidationException(errorMessage);
         }
 
-        if (films.containsKey(id)) {
-            Film oldFilm = films.get(id);
-
-            String newName = updateFilm.getName();
-            if (newName != null && !newName.isBlank()) {
-                oldFilm.setName(newName);
-            }
-
-            String newDescription = updateFilm.getDescription();
-            if (newDescription != null && !newDescription.isBlank()) {
-                if (newDescription.length() > 200) {
-                    String errorMessage = "Максимальная длина описания - 200 символов";
-                    log.error("Ошибка валидации обновления описания фильма: {}", errorMessage);
-                    throw new ValidationException(errorMessage);
-                }
-                oldFilm.setDescription(newDescription);
-            }
-
-            LocalDate newDate = updateFilm.getReleaseDate();
-            if (newDate != null) {
-                if (newDate.isBefore(LocalDate.of(1895, 12, 28))) {
-                    String errorMessage = "Дата релиза раньше 28 декабря 1895";
-                    log.error("Ошибка валидации обновления даты релиза фильма: {}", errorMessage);
-                    throw new ValidationException(errorMessage);
-                }
-                oldFilm.setReleaseDate(newDate);
-            }
-
-            Long newDuration = updateFilm.getDuration();
-            if (newDuration != null) {
-                if (updateFilm.getDuration() <= 0) {
-                    String errorMessage = "Продолжительность не может быть неположительным числом";
-                    log.error("Ошибка валидации обновления продолжительности фильма: {}", errorMessage);
-                    throw new ValidationException(errorMessage);
-                }
-                oldFilm.setDuration(newDuration);
-            }
-
-            log.info("Данные фильма успешно обновлены");
-            return oldFilm;
+        if (!films.containsKey(id)) {
+            String errorMessage = "Фильм с id = " + id + " не найден";
+            log.error(errorMessage);
+            throw new NotFoundException(errorMessage);
         }
 
-        String errorMessage = "Фильм с id = " + id + " не найден";
-        log.error(errorMessage);
-        throw new NotFoundException(errorMessage);
+        Film oldFilm = films.get(id);
+        updatedFilm.dateReleaseValidate();
+        oldFilm.setName(updatedFilm.getName());
+        oldFilm.setDescription(updatedFilm.getDescription());
+        oldFilm.setReleaseDate(updatedFilm.getReleaseDate());
+        oldFilm.setDuration(updatedFilm.getDuration());
+        log.info("Данные фильма успешно обновлены");
 
+        return oldFilm;
     }
 
     // вспомогательный метод для генерации идентификатора нового поста
@@ -125,6 +69,6 @@ public class FilmController {
                 .max()
                 .orElse(0);
         return ++currentMaxId;
-
     }
+
 }

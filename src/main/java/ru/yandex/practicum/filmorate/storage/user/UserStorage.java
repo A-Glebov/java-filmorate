@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface UserStorage {
 
-
     List<User> findAll();
 
     User create(User user);

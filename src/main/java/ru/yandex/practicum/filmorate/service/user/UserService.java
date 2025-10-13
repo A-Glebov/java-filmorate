@@ -21,7 +21,7 @@ public class UserService {
         this.userStorage = userStorage;
     }
 
-    public Optional<User> findById (long userId) {
+    public Optional<User> findById(long userId) {
         return userStorage.findById(userId);
     }
 

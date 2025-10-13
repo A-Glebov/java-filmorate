@@ -36,4 +36,5 @@ public class GlobalExceptionHandler {
     public Map<String, String> handleMethodArgumentNotValid(Throwable e) {
         return Map.of("Ошибка валидации аннотаций", e.getMessage());
     }
+
 }

@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.film.FilmService;
+import ru.yandex.practicum.filmorate.service.user.UserService;
 import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -14,19 +15,21 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FilmServiceTest {
-    InMemoryFilmStorage inMemoryFilmStorage;
-    FilmService filmService;
-    UserStorage userStorage;
+public class FilmServiceTest {
+    private InMemoryFilmStorage inMemoryFilmStorage;
+    private FilmService filmService;
+    private UserService userService;
+    private UserStorage userStorage;
 
-    Film film;
-    Film updateFilm;
+    private Film film;
+    private Film updateFilm;
 
     @BeforeEach
     public void init() {
-        inMemoryFilmStorage = new InMemoryFilmStorage();
         userStorage = new InMemoryUserStorage();
-        filmService = new FilmService(inMemoryFilmStorage, userStorage);
+        inMemoryFilmStorage = new InMemoryFilmStorage();
+        userService = new UserService(userStorage);
+        filmService = new FilmService(inMemoryFilmStorage, userService);
 
         film = Film.builder()
                 .name("Film1")

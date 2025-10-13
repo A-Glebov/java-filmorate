@@ -15,11 +15,11 @@ import java.util.HashSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserServiceTest {
-    UserService userService;
-    InMemoryUserStorage inMemoryUserStorage;
-    User user;
-    User updateUser;
+public class UserServiceTest {
+    private UserService userService;
+    private InMemoryUserStorage inMemoryUserStorage;
+    private User user;
+    private User updateUser;
 
     @BeforeEach
     public void init() {

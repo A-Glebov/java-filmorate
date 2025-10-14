@@ -113,8 +113,12 @@ public class UserService {
         User user = userStorage.findById(userId).orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден"));
         User friend = userStorage.findById(friendId).orElseThrow(() -> new NotFoundException("Пользователь с id: " + friendId + " не найден"));
 
+        log.trace("Список друзей userId {} до добавления нового друга: {}", userId, user.getFriends());
+        log.trace("Список друзей friendId {} до добавления нового друга: {}", friendId, friend.getFriends());
         user.getFriends().add(friendId);
         friend.getFriends().add(userId);
+        log.trace("Список друзей userId {} после добавления нового друга: {}", userId, user.getFriends());
+        log.trace("Список друзей friendId {} после добавления нового друга: {}", friendId, friend.getFriends());
     }
 
     public void deleteFriend(long userId, long friendId) {
@@ -123,8 +127,12 @@ public class UserService {
         User friend = userStorage.findById(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id: " + friendId + " не найден"));
 
+        log.trace("Список друзей userId {} до удаления друга: {}", userId, user.getFriends());
+        log.trace("Список друзей friendId {} до удаления друга: {}", friendId, friend.getFriends());
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
+        log.trace("Список друзей userId {} после удаления друга: {}", userId, user.getFriends());
+        log.trace("Список друзей friendId {} после удаления друга: {}", friendId, friend.getFriends());
     }
 
     public List<User> getUserFriends(long userId) {
@@ -133,6 +141,7 @@ public class UserService {
         List<User> friends = user.getFriends().stream()
                 .map(id -> userStorage.findById(id)
                         .orElseThrow(() -> new NotFoundException("Ошибка при получении списка друзей"))).toList();
+        log.trace("Список друзей userId {}: ", user.getFriends());
         return friends;
     }
 
@@ -151,7 +160,7 @@ public class UserService {
                 .map(id -> userStorage.findById(id)
                         .orElseThrow(() -> new NotFoundException("Ошибка получения списка общих друзей")))
                 .toList();
-
+        log.trace("Список общих друзей пользователей {} и {}: {}", userId, otherUserId, commonFriends);
         return commonFriends;
     }
 

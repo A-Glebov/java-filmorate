@@ -33,7 +33,9 @@ public class FilmService {
 
     public Film create(Film film) {
         if (!isDateReleaseValidate(film.getReleaseDate())) {
-            throw new ValidationException("Дата релиза не может быть до 28-12-1895");
+            String errorMessage = "Дата релиза не может быть до 28-12-1895";
+            log.info("Ошибка валидации при создании фильма: {}", errorMessage);
+            throw new ValidationException(errorMessage);
         }
         filmStorage.create(film);
         return film;
@@ -44,17 +46,20 @@ public class FilmService {
 
         if (id == null) {
             String errorMessage = "Id должен быть указан";
-            log.error(errorMessage);
+            log.error("Ошибка валидации при обновлении фильма: {}", errorMessage);
             throw new ValidationException(errorMessage);
         }
 
         Film oldFilm = filmStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм с id: " + id + " не найден"));
-
+                .orElseThrow(() ->
+                        new NotFoundException("Фильм с id: " + id + " не найден"));
+        log.trace("Фильм до обновления: {}", oldFilm);
         LocalDate newReleaseDate = updatedFilm.getReleaseDate();
         if (newReleaseDate != null) {
             if (!isDateReleaseValidate(newReleaseDate)) {
-                throw new ValidationException("Дата релиза не может быть до 28-12-1895");
+                String errorMessage = "Дата релиза не может быть до 28-12-1895";
+                log.error("Ошибка валидации при обновлении фильма: {}", errorMessage);
+                throw new ValidationException(errorMessage);
             }
             oldFilm.setReleaseDate(newReleaseDate);
         }
@@ -62,7 +67,7 @@ public class FilmService {
         oldFilm.setName(updatedFilm.getName());
         oldFilm.setDescription(updatedFilm.getDescription());
         oldFilm.setDuration(updatedFilm.getDuration());
-
+        log.trace("Обновленный фильм: {}", oldFilm);
         return oldFilm;
     }
 
@@ -70,9 +75,11 @@ public class FilmService {
         Film film = filmStorage.findById(filmId)
                 .orElseThrow(() -> new NotFoundException("Фильм с id: " + filmId + " не найден"));
         User user = userService.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден"));
-
+                .orElseThrow(() ->
+                        new NotFoundException("Пользователь с id: " + userId + " не найден"));
+        log.trace("Список лайков до добавления нового лайка: {}", film.getLikes());
         film.getLikes().add(userId);
+        log.trace("Список лайков после добавления нового лайка: {}", film.getLikes());
     }
 
     public void deleteLike(long filmId, long userId) {
@@ -80,14 +87,19 @@ public class FilmService {
                 .orElseThrow(() -> new NotFoundException("Фильм с id: " + filmId + " не найден"));
         User user = userService.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден"));
+
+        log.trace("Список лайков до удаления лайка: {}", film.getLikes());
         film.getLikes().remove(userId);
+        log.trace("Список лайков после удаления лайка: {}", film.getLikes());
     }
 
     public List<Film> getPopularFilms(int count) {
-        return filmStorage.findAll().stream()
+        List<Film> popularFilms = filmStorage.findAll().stream()
                 .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
                 .limit(count)
                 .toList();
+        log.trace("Список {} самых популярных фильмов: {}", count, popularFilms);
+        return popularFilms;
     }
 
     public boolean isDateReleaseValidate(LocalDate releaseDate) {

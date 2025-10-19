@@ -165,16 +165,19 @@ public class UserService {
     }
 
     private boolean isLoginExists(String login) {
+        log.info("Проверка логина на уникальность");
         return findAll().stream()
                 .map(User::getLogin)
                 .anyMatch(existLogin -> existLogin.equals(login));
     }
 
     private boolean isEmptyEmail(String email) {
+        log.info("Проверка на заполнение email");
         return email == null || email.isBlank();
     }
 
     private boolean isEmailExists(String email) {
+        log.info("Проверка email на уникальность");
         return findAll().stream()
                 .map(User::getEmail)
                 .anyMatch(existEmail -> existEmail.equals(email));

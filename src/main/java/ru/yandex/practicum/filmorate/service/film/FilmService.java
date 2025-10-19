@@ -62,11 +62,15 @@ public class FilmService {
                 throw new ValidationException(errorMessage);
             }
             oldFilm.setReleaseDate(newReleaseDate);
+            log.trace("Установлена новая дата релиза фильма: {}", oldFilm.getName());
         }
 
         oldFilm.setName(updatedFilm.getName());
+        log.trace("Установлено новое название фильма: {}", oldFilm.getName());
         oldFilm.setDescription(updatedFilm.getDescription());
+        log.trace("Установлено новое описание фильма: {}", oldFilm.getDescription());
         oldFilm.setDuration(updatedFilm.getDuration());
+        log.trace("Установлена новая продолжительность фильма: {}", oldFilm.getDuration());
         log.trace("Обновленный фильм: {}", oldFilm);
         return oldFilm;
     }
@@ -103,6 +107,7 @@ public class FilmService {
     }
 
     public boolean isDateReleaseValidate(LocalDate releaseDate) {
+        log.info("Валидация даты релиза фильма");
         return releaseDate.isAfter(LocalDate.of(1895, 12, 27));
     }
 

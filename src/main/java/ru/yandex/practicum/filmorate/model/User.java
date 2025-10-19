@@ -4,9 +4,13 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
     private Long id;
 
@@ -21,5 +25,7 @@ public class User {
 
     @PastOrPresent
     private LocalDate birthday;
+
+    private Set<Long> friends = new HashSet<>();
 
 }

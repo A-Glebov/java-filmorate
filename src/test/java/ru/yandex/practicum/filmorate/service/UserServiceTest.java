@@ -1,28 +1,36 @@
-package ru.yandex.practicum.filmorate.controller;
+package ru.yandex.practicum.filmorate.service;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.user.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserControllerTest {
-    UserController userController = new UserController();
-    User user;
-    User updateUser;
+public class UserServiceTest {
+    private UserService userService;
+    private InMemoryUserStorage inMemoryUserStorage;
+    private User user;
+    private User updateUser;
 
     @BeforeEach
     public void init() {
+        inMemoryUserStorage = new InMemoryUserStorage();
+        userService = new UserService(inMemoryUserStorage);
         user = User.builder()
                 .email("pochta@ya.ru")
                 .login("login-user1")
                 .name("Ivanov")
                 .birthday(LocalDate.of(2000, 1, 1))
+                .friends(new HashSet<>())
                 .build();
 
         updateUser = User.builder()
@@ -30,15 +38,16 @@ class UserControllerTest {
                 .login("login-user2")
                 .name("Ivanov-Petrovsky")
                 .birthday(LocalDate.of(2000, 1, 2))
+                .friends(new HashSet<>())
                 .build();
     }
 
     @Test
     public void createUserWithValidFieldsAndFindAll() {
-        userController.create(user);
+        userService.create(user);
 
         assertEquals(1, user.getId(), "Юзеру не присвоен id");
-        assertEquals(1, userController.findAll().size(), "Юзер не добавлен");
+        assertEquals(1, userService.findAll().size(), "Юзер не добавлен");
     }
 
     @Test
@@ -49,18 +58,17 @@ class UserControllerTest {
                 .name("Petrov")
                 .birthday(LocalDate.of(2000, 1, 1))
                 .build();
-        userController.create(user);
+        userService.create(user);
 
         assertThrows(ValidationException.class,
-                () -> userController.create(userWithExistLogin),
+                () -> userService.create(userWithExistLogin),
                 "Добавление пользователя с существующим логином должно приводить к исключению");
-
     }
 
     @Test
     public void createUserWithEmptyName() {
         user.setName("");
-        userController.create(user);
+        userService.create(user);
 
         assertEquals(user.getName(), user.getLogin(), "При пустом имени полю name должен присваиваться login");
     }
@@ -69,23 +77,28 @@ class UserControllerTest {
     public void updateUserWitNonExistentId() {
         updateUser.setId(2L);
         assertThrows(NotFoundException.class,
-                () -> userController.update(updateUser),
+                () -> userService.update(updateUser),
                 "Обновление юзера с несуществующим id должно приводить к исключению");
     }
 
     @Test
     public void updateFileWithoutId() {
         assertThrows(ValidationException.class,
-                () -> userController.update(updateUser), "id не должен равняться null");
+                () -> userService.update(updateUser), "id не должен равняться null");
     }
 
     @Test
     public void updateUser() {
-        userController.create(user);
+        userService.create(user);
         updateUser.setId(1L);
-        userController.update(updateUser);
+        userService.update(updateUser);
 
         assertEquals(updateUser, user, "Данные пользователя не обновились");
+    }
+
+    @AfterEach
+    public void clean() {
+        inMemoryUserStorage = null;
     }
 
 }

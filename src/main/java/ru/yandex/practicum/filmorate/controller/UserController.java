@@ -2,10 +2,10 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.user.UserService;
 
 import java.util.*;
 
@@ -13,113 +13,68 @@ import java.util.*;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+    private final UserService userService;
 
-    private final Map<Long, User> users = new HashMap<>();
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public List<User> findAll() {
-        log.info("Запрос на получение всех пользователей");
-        return new ArrayList<>(users.values());
+        return userService.findAll();
     }
 
     @PostMapping
     public User create(@Valid @RequestBody User user) {
-        log.info("Создание пользователя");
-
-        if (users.values().stream()
-                .map(User::getEmail)
-                .anyMatch(email -> email.equals(user.getEmail()))) {
-            String errorMessage = "Этот имейл уже используется";
-            log.error("Ошибка валидации создания пользователя: {}", errorMessage);
-            throw new ValidationException(errorMessage);
-        }
-
-        if (users.values().stream()
-                .map(User::getLogin)
-                .anyMatch(login -> login.equals(user.getLogin()))) {
-            String errorMessage = "Логин: " + user.getLogin() + " уже занят";
-            log.error("Ошибка валидации создания пользователя: {}", errorMessage);
-            throw new ValidationException(errorMessage);
-        }
-
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-
-        user.setId(getNextId());
-        users.put(user.getId(), user);
-        log.info("Пользователь успешно создан");
-
+        log.info("Запрос на создание пользователя");
+        user = userService.create(user);
+        log.info("Пользователь id: {} создан", user.getId());
         return user;
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User updatedUser) {
-        log.info("Обновление данных пользователя");
-        Long id = updatedUser.getId();
-
-        if (id == null) {
-            String errorMessage = "Id должен быть указан";
-            log.error("Ошибка валидации обновления данных пользователя: {}", errorMessage);
-            throw new ValidationException(errorMessage);
-        }
-
-        if (users.containsKey(id)) {
-            User oldUser = users.get(id);
-
-            String newEmail = updatedUser.getEmail();
-            if (!newEmail.equals(oldUser.getEmail())) {
-                if (users.values().stream()
-                        .map(User::getEmail)
-                        .anyMatch(email -> email.equals(newEmail))) {
-                    String errorMessage = "Этот имейл уже используется";
-                    log.error("Ошибка валидации обновления имейла пользователя: {}", errorMessage);
-                    throw new ValidationException(errorMessage);
-                }
-                oldUser.setEmail(newEmail);
-            }
-
-            String newLogin = updatedUser.getLogin();
-            if (!oldUser.getLogin().equals(newLogin)) {
-                if (users.values().stream()
-                        .map(User::getLogin)
-                        .anyMatch(login -> login.equals(newLogin))) {
-                    String errorMessage = "Логин: " + newLogin + " уже занят";
-                    log.error("Ошибка валидации обновления логина: {}", errorMessage);
-                    throw new ValidationException(errorMessage);
-                }
-                oldUser.setLogin(newLogin);
-
-            }
-
-            String newName = updatedUser.getName();
-            if (newName == null || newName.isBlank()) {
-                oldUser.setName(newLogin);
-            } else {
-                oldUser.setName(newName);
-            }
-
-            oldUser.setBirthday(updatedUser.getBirthday());
-            log.info("Данные пользователя обновлены");
-
-            return oldUser;
-        }
-
-        String errorMessage = "Пользователь id = " + id + " не найден";
-        log.error("Ошибка валидации обновления данных пользователя: {}", errorMessage);
-        throw new NotFoundException(errorMessage);
-
+        log.info("Запрос на обновление данных пользователя");
+        User user = userService.update(updatedUser);
+        log.info("Данные пользователя обновлены");
+        return user;
     }
 
+    @PutMapping("/{userId}/friends/{friendId}")
+    public void addFriend(@PathVariable long userId,
+                          @PathVariable long friendId) {
+        log.info("Запрос на добавление в список друзей пользователя {} пользователя {}", userId, friendId);
+        userService.addFriend(userId, friendId);
+        log.info("Пользователь id {} успешно добавил друга id {}", userId, friendId);
+    }
 
+    @DeleteMapping("/{userId}/friends/{friendId}")
+    public void deleteFriend(@PathVariable long userId,
+                             @PathVariable long friendId) {
+        log.info("Запрос на удаление из друзей");
+        userService.deleteFriend(userId, friendId);
+        log.info("Пользователь id {} успешно удален из друзей пользователя id {}", friendId, userId);
+    }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @GetMapping("/{userId}/friends")
+    public List<User> getUserFriends(@PathVariable long userId) {
+        log.info("Запрос на получение списка друзей пользователя id: {}", userId);
+        List<User> friends = userService.getUserFriends(userId);
+        log.info("Список друзей пользователя id: {} успешно получен", userId);
+        return friends;
+    }
+
+    @GetMapping("/{userId}/friends/common/{otherUserId}")
+    public List<User> findCommonFriends(@PathVariable long userId,
+                                        @PathVariable long otherUserId) {
+        log.info("Запрос на получение списка общих друзей пользователя id: {} с пользователем id: {}",
+                userId, otherUserId);
+        List<User> friends = userService.findCommonFriends(userId, otherUserId);
+        log.info("Список общих друзей пользователя id: {} с пользователем id : {} успешно получен : {}",
+                userId, otherUserId, friends);
+
+        return friends;
     }
 
 }

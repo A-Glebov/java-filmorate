@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.*;
 
 @Slf4j
-@Component
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Long, User> users = new HashMap<>();
 
@@ -23,15 +22,9 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User save(User user) {
+        log.info("Запрос на добавление пользователя в хранилище {}", user.getId());
         users.put(user.getId(), user);
         log.info("Данные пользователя id {} обновлены в хранилище", user.getId());
-        return user;
-    }
-
-    @Override
-    public User delete(User user) {
-        users.remove(user.getId());
-        log.info("Пользователь id {} удален из хранилища", user.getId());
         return user;
     }
 

@@ -1,47 +1,76 @@
 package ru.yandex.practicum.filmorate.service.film;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.user.UserService;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.film.*;
 
 import java.time.LocalDate;
-
-import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserService userService;
+    private final LikeDbStorage likeDbStorage;
+    private final MpaDbStorage mpaDbStorage;
+    private final GenreDbStorage genreDbStorage;
+    private final FilmGenresDbStorage filmGenresDbStorage;
 
-    @Autowired
-    public FilmService(FilmStorage filmStorage, UserService userService) {
-        this.filmStorage = filmStorage;
-        this.userService = userService;
+    public Film findById(Long filmId) {
+        log.info("Запрос в сервис на получение фильма id {} -> ", filmId);
+        Film film = filmStorage.findById(filmId).orElseThrow(() ->
+                new NotFoundException("фильм с id не найден"));
+        log.info("Найден фильм : {}", film.toString());
+        return film;
     }
 
     public List<Film> findAll() {
-        return filmStorage.findAll();
+        log.info("Запрос в сервис на получение всех фильмов");
+        List<Film> films = filmStorage.findAll();
+        genreDbStorage.findAllGenresByFilm(films);
+        log.info("Список фильмов: {}", films);
+        return films;
     }
 
     public Film create(Film film) {
+        log.info("Запрос в сервис на создание фильма {}", film);
+        log.info("Валидация даты релиза при создании фильма");
         if (!isDateReleaseValidate(film.getReleaseDate())) {
             String errorMessage = "Дата релиза не может быть до 28-12-1895";
             log.info("Ошибка валидации при создании фильма: {}", errorMessage);
             throw new ValidationException(errorMessage);
         }
+
+        log.info("Валидация рейтинга при создании фильма -> {}", film.getMpa());
+        Mpa mpa = mpaDbStorage.findMpaById(film.getMpa().getId()).orElseThrow(() ->
+                new NotFoundException("MPA с id не найден"));
+
+        log.info("Валидация списка жанров при создании фильма -> {}", film.getGenres());
+        int genreId = film.getGenres().iterator().next().getId();// ???
+        log.info("Жанр id -> {}", genreId);
+        genreDbStorage.findGenreById(genreId).orElseThrow(() ->
+                new NotFoundException("Жанр не найден"));
+
         filmStorage.create(film);
+
+        // Добавление в таблицу film_genres
+        filmGenresDbStorage.create(film.getId(), film.getGenres());//&&&&&
+        log.info("Фильм создан -> {}", film);
         return film;
     }
 
     public Film update(Film updatedFilm) {
+        log.info("Запрос в сервис на обновление фильма -> {}", updatedFilm);
         Long id = updatedFilm.getId();
 
         if (id == null) {
@@ -54,6 +83,8 @@ public class FilmService {
                 .orElseThrow(() ->
                         new NotFoundException("Фильм с id: " + id + " не найден"));
         log.trace("Фильм до обновления: {}", oldFilm);
+
+        log.info("Валидация даты релиза при обновлении фильма");
         LocalDate newReleaseDate = updatedFilm.getReleaseDate();
         if (newReleaseDate != null) {
             if (!isDateReleaseValidate(newReleaseDate)) {
@@ -61,53 +92,73 @@ public class FilmService {
                 log.error("Ошибка валидации при обновлении фильма: {}", errorMessage);
                 throw new ValidationException(errorMessage);
             }
-            oldFilm.setReleaseDate(newReleaseDate);
-            log.trace("Установлена новая дата релиза фильма: {}", oldFilm.getName());
         }
 
-        oldFilm.setName(updatedFilm.getName());
-        log.trace("Установлено новое название фильма: {}", oldFilm.getName());
-        oldFilm.setDescription(updatedFilm.getDescription());
-        log.trace("Установлено новое описание фильма: {}", oldFilm.getDescription());
-        oldFilm.setDuration(updatedFilm.getDuration());
-        log.trace("Установлена новая продолжительность фильма: {}", oldFilm.getDuration());
-        log.trace("Обновленный фильм: {}", oldFilm);
-        return oldFilm;
+        log.info("Валидация рейтинга при обновлении фильма -> {}", updatedFilm.getMpa());
+        Mpa mpa = mpaDbStorage.findMpaById(updatedFilm.getMpa().getId()).orElseThrow(() ->
+                new NotFoundException("MPA с id не найден"));
+        log.info("Фильм обновлен -> {}", updatedFilm);
+
+        //Сохранение в таблицу film_genres
+        filmGenresDbStorage.save(updatedFilm.getId(), updatedFilm.getGenres());
+        log.info("Фильм успешно обновлен -> {}", updatedFilm);
+        return filmStorage.save(updatedFilm);
     }
 
     public void addLike(long filmId, long userId) {
+        log.info("Запрос на добавление лайка фильму");
         Film film = filmStorage.findById(filmId)
                 .orElseThrow(() -> new NotFoundException("Фильм с id: " + filmId + " не найден"));
-        User user = userService.findById(userId)
-                .orElseThrow(() ->
-                        new NotFoundException("Пользователь с id: " + userId + " не найден"));
-        log.trace("Список лайков до добавления нового лайка: {}", film.getLikes());
-        film.getLikes().add(userId);
-        log.trace("Список лайков после добавления нового лайка: {}", film.getLikes());
+        User user = userService.findById(userId);
+
+        likeDbStorage.addLike(filmId, userId);
     }
 
     public void deleteLike(long filmId, long userId) {
+        log.info("Запрос в сервис на удаление лайка фильму");
         Film film = filmStorage.findById(filmId)
                 .orElseThrow(() -> new NotFoundException("Фильм с id: " + filmId + " не найден"));
-        User user = userService.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден"));
+        User user = userService.findById(userId);
 
-        log.trace("Список лайков до удаления лайка: {}", film.getLikes());
-        film.getLikes().remove(userId);
-        log.trace("Список лайков после удаления лайка: {}", film.getLikes());
+        likeDbStorage.deleteLike(filmId, userId);
     }
 
     public List<Film> getPopularFilms(int count) {
-        List<Film> popularFilms = filmStorage.findAll().stream()
-                .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
-                .limit(count)
-                .toList();
+        log.info("Запрос в сервис на получение списка популярных фильмов");
+        List<Film> popularFilms = filmStorage.getPopularFilms(count);
         log.trace("Список {} самых популярных фильмов: {}", count, popularFilms);
         return popularFilms;
     }
 
+    public List<Mpa> findAllMpa() {
+        log.info("Запрос в сервис на получение списка всех жанров");
+        List<Mpa> mpas = mpaDbStorage.findAllMpa();
+        log.trace("Список рейтингов -> {}", mpas);
+        return mpas;
+    }
+
+    public Mpa findMpaById(int id) {
+        log.info("Запрос в сервис на получение рейтинга по id -> {} ", id);
+        Mpa mpa = mpaDbStorage.findMpaById(id).orElseThrow(() -> new NotFoundException("Рейтинг MPA не найден."));
+        log.trace("Рейтинг получен -> {}", mpa);
+        return mpa;
+    }
+
+    public List<Genre> findAllGenres() {
+        log.info("Запрос в сервис на получение списка всех жанров");
+        List<Genre> genres = genreDbStorage.findAllGenres();
+        log.trace("Список всех жанров -> {}", genres);
+        return genres;
+    }
+
+    public Genre findGenreById(int id) {
+        log.info("Запрос в сервис на поиск жанра по id -> {} ", id);
+        Genre genre = genreDbStorage.findGenreById(id).orElseThrow(() -> new NotFoundException("Жанр не найден."));
+        log.trace("Получен жанр {} с id -> {}", genre, id);
+        return genre;
+    }
+
     public boolean isDateReleaseValidate(LocalDate releaseDate) {
-        log.info("Валидация даты релиза фильма");
         return releaseDate.isAfter(LocalDate.of(1895, 12, 27));
     }
 

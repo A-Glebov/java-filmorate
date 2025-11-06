@@ -1,11 +1,15 @@
 package ru.yandex.practicum.filmorate.service.user;
 
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.FriendDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
@@ -13,22 +17,23 @@ import java.util.*;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserStorage userStorage;
+    private final FriendDbStorage friendDbStorage;
 
-    @Autowired
-    public UserService(UserStorage userStorage) {
-        this.userStorage = userStorage;
+    public User findById(long userId) {
+        User user = userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден"));
+        return user;
     }
 
-    public Optional<User> findById(long userId) {
-        return userStorage.findById(userId);
-    }
-
+    //+
     public List<User> findAll() {
         return userStorage.findAll();
     }
 
+    //+
     public User create(User user) {
         String login = user.getLogin();
 
@@ -58,10 +63,16 @@ public class UserService {
         return user;
     }
 
+    //+
     public User update(User updatedUser) {
-        Long id = updatedUser.getId();
+        log.info("Запрос на обновление пользователя id -> {} в сервисе",  updatedUser.getId());
+        log.info("-> {}", updatedUser.toString());
+       /* if (userStorage.findById(updatedUser.getId()).isEmpty()) {
+            throw new NotFoundException("Пользователь не найден.");
+        }*/
 
-        if (id == null) {
+        Long id = updatedUser.getId();
+       if (id == null) {
             String errorMessage = "Id должен быть указан";
             log.error("Ошибка валидации обновления данных пользователя: {}", errorMessage);
             throw new ValidationException(errorMessage);
@@ -71,13 +82,13 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("Пользователь с id: " + id + " не найден"));
 
         String newEmail = updatedUser.getEmail();
+        log.trace("newEmail -> {}", newEmail);
         if (!newEmail.equals(oldUser.getEmail())) {
             if (isEmailExists(newEmail)) {
                 String errorMessage = "Этот email уже используется";
                 log.error("Ошибка валидации обновления email пользователя: {}", errorMessage);
                 throw new ValidationException(errorMessage);
             }
-            oldUser.setEmail(newEmail);
         }
 
         String newLogin = updatedUser.getLogin();
@@ -87,14 +98,11 @@ public class UserService {
                 log.error("Ошибка валидации обновления логина: {}", errorMessage);
                 throw new ValidationException(errorMessage);
             }
-            oldUser.setLogin(newLogin);
         }
 
         String newName = updatedUser.getName();
         if (newName == null || newName.isBlank()) {
             oldUser.setName(newLogin);
-        } else {
-            oldUser.setName(newName);
         }
 
         LocalDate newBirthday = updatedUser.getBirthday();
@@ -104,21 +112,15 @@ public class UserService {
                 log.error("Ошибка валидации обновления даты рождения: {}", errorMessage);
                 throw new ValidationException(errorMessage);
             }
-            oldUser.setBirthday(updatedUser.getBirthday());
         }
-        return oldUser;
+        return userStorage.save(updatedUser);
     }
 
     public void addFriend(long userId, long friendId) {
         User user = userStorage.findById(userId).orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден"));
         User friend = userStorage.findById(friendId).orElseThrow(() -> new NotFoundException("Пользователь с id: " + friendId + " не найден"));
 
-        log.trace("Список друзей userId {} до добавления нового друга: {}", userId, user.getFriends());
-        log.trace("Список друзей friendId {} до добавления нового друга: {}", friendId, friend.getFriends());
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
-        log.trace("Список друзей userId {} после добавления нового друга: {}", userId, user.getFriends());
-        log.trace("Список друзей friendId {} после добавления нового друга: {}", friendId, friend.getFriends());
+        friendDbStorage.addFriend(userId, friendId);
     }
 
     public void deleteFriend(long userId, long friendId) {
@@ -127,21 +129,16 @@ public class UserService {
         User friend = userStorage.findById(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id: " + friendId + " не найден"));
 
-        log.trace("Список друзей userId {} до удаления друга: {}", userId, user.getFriends());
-        log.trace("Список друзей friendId {} до удаления друга: {}", friendId, friend.getFriends());
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
-        log.trace("Список друзей userId {} после удаления друга: {}", userId, user.getFriends());
-        log.trace("Список друзей friendId {} после удаления друга: {}", friendId, friend.getFriends());
+        friendDbStorage.deleteFriend(userId, friendId);
     }
 
     public List<User> getUserFriends(long userId) {
+        log.info("Запрос в сервис на получение списка друзей");
+        log.info(userStorage.findById(userId).toString());
         User user = userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id: " + userId + " не найден"));
-        List<User> friends = user.getFriends().stream()
-                .map(id -> userStorage.findById(id)
-                        .orElseThrow(() -> new NotFoundException("Ошибка при получении списка друзей"))).toList();
-        log.trace("Список друзей userId {}: ", user.getFriends());
+                .orElseThrow(() -> new NotFoundException("Ошибка сервиса Пользователь с id: " + userId + " не найден"));
+
+        List<User> friends = friendDbStorage.getUserFriends(userId);
         return friends;
     }
 
@@ -151,15 +148,7 @@ public class UserService {
         User otherUser = userStorage.findById(otherUserId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id: " + otherUserId + " не найден"));
 
-        Set<Long> setCommonFriends = user.getFriends();
-        Set<Long> friendsOtherUser = otherUser.getFriends();
-
-        setCommonFriends.retainAll(friendsOtherUser);
-
-        List<User> commonFriends = setCommonFriends.stream()
-                .map(id -> userStorage.findById(id)
-                        .orElseThrow(() -> new NotFoundException("Ошибка получения списка общих друзей")))
-                .toList();
+        List<User> commonFriends = friendDbStorage.findCommonFriends(userId, otherUserId);
         log.trace("Список общих друзей пользователей {} и {}: {}", userId, otherUserId, commonFriends);
         return commonFriends;
     }

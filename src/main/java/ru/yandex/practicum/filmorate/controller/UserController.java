@@ -35,7 +35,7 @@ public class UserController {
 
     @PutMapping
     public User update(@Valid @RequestBody User updatedUser) {
-        log.info("Запрос на обновление данных пользователя");
+        log.info("Запрос на обновление данных пользователя id -> {}", updatedUser.getId());
         User user = userService.update(updatedUser);
         log.info("Данные пользователя обновлены");
         return user;

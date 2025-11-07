@@ -56,10 +56,12 @@ public class FilmService {
                 new NotFoundException("MPA с id не найден"));
 
         log.info("Валидация списка жанров при создании фильма -> {}", film.getGenres());
-        int genreId = film.getGenres().iterator().next().getId();// ???
-        log.info("Жанр id -> {}", genreId);
-        genreDbStorage.findGenreById(genreId).orElseThrow(() ->
-                new NotFoundException("Жанр не найден"));
+
+        for (Genre g : film.getGenres()) {
+            log.info("Жанр id -> {}", g.getId());
+            genreDbStorage.findGenreById(g.getId()).orElseThrow(() ->
+                    new NotFoundException("Жанр не найден"));
+        }
 
         filmStorage.create(film);
 

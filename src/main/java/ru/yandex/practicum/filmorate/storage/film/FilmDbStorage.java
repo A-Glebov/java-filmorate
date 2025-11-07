@@ -22,7 +22,6 @@ import java.util.Optional;
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
-    private final UserRowMapper userRowMapper;
 
     @Override
     public Film create(Film film) {
@@ -59,7 +58,6 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Optional<Film> findById(long filmId) {
         log.info("Запрос в хранилище на поиск фильма filmId: {}", filmId);
-
         String query = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, m.rating_id, m.name AS rating, " +  // ← добавлено description
                 "GROUP_CONCAT(g.genre_id || ':' || g.name SEPARATOR ',') AS genres " +
                 "FROM films f " +
@@ -88,7 +86,6 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> findAll() {
         log.info("Запрос в хранилище на получение всех фильмов");
-        //String query = "SELECT film_id, name, description, duration FROM films";
         String query = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, m.rating_id, m.name AS rating, " +  // ← добавлено description
                 "GROUP_CONCAT(g.genre_id || ':' || g.name SEPARATOR ',') AS genres " +
                 "FROM films f " +
@@ -102,21 +99,6 @@ public class FilmDbStorage implements FilmStorage {
 
     public List<Film> getPopularFilms(int count) {
         log.info("Запрос на получение популярных фильмов");
-//        String query = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration " +
-//                "FROM films AS f " +
-//                "LEFT JOIN likes ON f.film_id = likes.film_id " +
-//                "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration " +
-//                "ORDER BY COUNT(likes.film_id) DESC " +
-//                "LIMIT ?";
-//        String query = """
-//                SELECT f.*, COUNT(l.film_id) as likes_count\s
-//                FROM films f\s
-//                LEFT JOIN mpa m ON f.rating_id = m.rating_id\s
-//                LEFT JOIN likes l ON f.film_id = l.film_id\s
-//                GROUP BY f.film_id\s
-//                ORDER BY likes_count DESC\s
-//                LIMIT ?\s
-//                """;
         String query = """
                 SELECT f.film_id, f.name, f.description, f.release_date, f.duration,\s
                        f.rating_id, m.name as rating,\s

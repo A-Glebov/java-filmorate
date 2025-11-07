@@ -1,10 +1,7 @@
 package ru.yandex.practicum.filmorate.service.user;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -13,7 +10,7 @@ import ru.yandex.practicum.filmorate.storage.user.FriendDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -28,12 +25,10 @@ public class UserService {
         return user;
     }
 
-    //+
     public List<User> findAll() {
         return userStorage.findAll();
     }
 
-    //+
     public User create(User user) {
         String login = user.getLogin();
 
@@ -60,19 +55,16 @@ public class UserService {
         }
 
         userStorage.create(user);
+
         return user;
     }
 
-    //+
     public User update(User updatedUser) {
-        log.info("Запрос на обновление пользователя id -> {} в сервисе",  updatedUser.getId());
-        log.info("-> {}", updatedUser.toString());
-       /* if (userStorage.findById(updatedUser.getId()).isEmpty()) {
-            throw new NotFoundException("Пользователь не найден.");
-        }*/
+        log.info("Запрос на обновление пользователя id -> {} в сервисе", updatedUser.getId());
+        log.info("-> {}", updatedUser);
 
         Long id = updatedUser.getId();
-       if (id == null) {
+        if (id == null) {
             String errorMessage = "Id должен быть указан";
             log.error("Ошибка валидации обновления данных пользователя: {}", errorMessage);
             throw new ValidationException(errorMessage);
@@ -113,6 +105,7 @@ public class UserService {
                 throw new ValidationException(errorMessage);
             }
         }
+
         return userStorage.save(updatedUser);
     }
 

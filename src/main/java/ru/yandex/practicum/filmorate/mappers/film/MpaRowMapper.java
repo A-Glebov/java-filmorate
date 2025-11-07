@@ -18,4 +18,5 @@ public class MpaRowMapper implements RowMapper<Mpa> {
         log.info("MpaRowMapper has finished");
         return mpa;
     }
+
 }

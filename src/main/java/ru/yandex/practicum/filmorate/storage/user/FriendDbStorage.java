@@ -45,4 +45,5 @@ public class FriendDbStorage {
                 "AND f.friend_id <> fr.user_id AND fr.friend_id <> f.user_id";
         return jdbcTemplate.query(sql, userRowMapper, userId, otherUserId);
     }
+
 }

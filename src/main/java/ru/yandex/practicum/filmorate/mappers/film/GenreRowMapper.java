@@ -21,4 +21,5 @@ public class GenreRowMapper implements RowMapper<Genre> {
         log.info("genre -> {}", genre);
         return genre;
     }
+
 }

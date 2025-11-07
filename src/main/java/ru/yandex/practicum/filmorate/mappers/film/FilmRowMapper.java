@@ -9,8 +9,6 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
 
 @Slf4j
 @Component
@@ -35,4 +33,5 @@ public class FilmRowMapper implements RowMapper<Film> {
         log.info("FilmRowMapper finish");
         return film;
     }
+
 }

@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage.film;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.mappers.film.GenreRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -19,7 +20,7 @@ import static java.util.function.UnaryOperator.identity;
 @Slf4j
 @RequiredArgsConstructor
 @Repository
-
+@Component
 public class GenreDbStorage {
     private final JdbcTemplate jdbcTemplate;
     private final GenreRowMapper genreRowMapper = new GenreRowMapper();
@@ -41,7 +42,7 @@ public class GenreDbStorage {
     }
 
     public void findAllGenresByFilm(List<Film> films) {
-        log.info("Работае GenreDbStorage.findAllGenresByFilm");
+        log.info("Работает GenreDbStorage.findAllGenresByFilm");
         final Map<Long, Film> filmById = films.stream().collect(Collectors.toMap(Film::getId, identity()));
 
         String sql = "SELECT g.* FROM GENRES g " +

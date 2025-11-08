@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Slf4j
-@RequiredArgsConstructor
 @Repository
+@RequiredArgsConstructor
 public class MpaDbStorage {
     private final JdbcTemplate jdbcTemplate;
     private final MpaRowMapper mpaRowMapper = new MpaRowMapper();

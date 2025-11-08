@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         UserRowMapper.class})
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-class UserDbStorageTest {
+public class UserDbStorageTest {
 
     @Autowired
     private UserDbStorage userStorage;
@@ -90,9 +90,12 @@ class UserDbStorageTest {
     }
 
     @Test
-    public void testUdatedNoSuchUser() {
-        System.out.println(userStorage.findAll());
-        Optional<User> userOptional = userStorage.findById(1L);
+    public void testUpdatedNoSuchUser() {
+        User testUser = new User();
+        testUser.setId(999L);
+        userStorage.save(testUser);
+
+        Optional<User> userOptional = userStorage.findById(testUser.getId());
         assertThat(userOptional).isEmpty();
     }
 

@@ -13,7 +13,9 @@ import ru.yandex.practicum.filmorate.service.user.UserService;
 import ru.yandex.practicum.filmorate.storage.film.*;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -56,17 +58,18 @@ public class FilmService {
                 new NotFoundException("MPA с id не найден"));
 
         log.info("Валидация списка жанров при создании фильма -> {}", film.getGenres());
+        Collection<Integer> genresIds = film.getGenres().stream()
+                .map(Genre::getId)
+                .collect(Collectors.toSet());
+        List<Genre> existGenres = genreDbStorage.findGenresByIds(genresIds);
 
-        for (Genre g : film.getGenres()) {
-            log.info("Жанр id -> {}", g.getId());
-            genreDbStorage.findGenreById(g.getId()).orElseThrow(() ->
-                    new NotFoundException("Жанр не найден"));
+        if (existGenres.size() != film.getGenres().size()) {
+            throw new NotFoundException("Жанр не найден");
         }
 
         filmStorage.create(film);
 
-        // Добавление в таблицу film_genres
-        filmGenresDbStorage.create(film.getId(), film.getGenres());//&&&&&
+        filmGenresDbStorage.create(film.getId(), film.getGenres());
         log.info("Фильм создан -> {}", film);
         return film;
     }

@@ -50,14 +50,15 @@ public class FilmDbStorage implements FilmStorage {
         String query = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ? WHERE film_id = ?";
         log.debug("query: {}", query);
         log.debug("new film: {}", film);
-        jdbcTemplate.update(query, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getId());
+        jdbcTemplate.update(query, film.getName(), film.getDescription(),
+                film.getReleaseDate(), film.getDuration(), film.getId());
         return film;
     }
 
     @Override
     public Optional<Film> findById(long filmId) {
         log.info("Запрос в хранилище на поиск фильма filmId: {}", filmId);
-        String query = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, m.rating_id, m.name AS rating, " +  // ← добавлено description
+        String query = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, m.rating_id, m.name AS rating, " +
                 "GROUP_CONCAT(g.genre_id || ':' || g.name SEPARATOR ',') AS genres " +
                 "FROM films f " +
                 "LEFT JOIN mpa m ON f.rating_id = m.rating_id " +
@@ -85,7 +86,7 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> findAll() {
         log.info("Запрос в хранилище на получение всех фильмов");
-        String query = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, m.rating_id, m.name AS rating, " +  // ← добавлено description
+        String query = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, m.rating_id, m.name AS rating, " +
                 "GROUP_CONCAT(g.genre_id || ':' || g.name SEPARATOR ',') AS genres " +
                 "FROM films f " +
                 "LEFT JOIN mpa m ON f.rating_id = m.rating_id " +

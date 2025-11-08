@@ -9,10 +9,7 @@ import ru.yandex.practicum.filmorate.mappers.film.GenreRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.function.UnaryOperator.identity;
@@ -54,6 +51,16 @@ public class GenreDbStorage {
                 filmById.keySet().toArray(), genreRowMapper);
     }
 
+    public List<Genre> findGenresByIds(Collection<Integer> genreIds) {
+        String query = "SELECT * FROM genres WHERE genre_id IN (%s)";
+        String inSql = String.join(",", Collections.nCopies(genreIds.size(), "?"));
+        String sqlFormatted = String.format(query, inSql);
+        return jdbcTemplate.query(
+                sqlFormatted,
+                genreIds.toArray(),
+                genreRowMapper
+        );
+    }
 
 }
 

@@ -7,9 +7,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.mappers.film.GenreRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.FilmGenreInfo;
+import ru.yandex.practicum.filmorate.model.FilmGenres;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -35,15 +38,45 @@ public class GenreDbStorage {
 
     }
 
-    public HashSet<Genre> findAllGenresByFilm(Film film) {
-        log.info("Работает GenreDbStorage.findAllGenresByFilm");
+    public void setGenresToFilms(List<Film> films) {
+        String sql = "SELECT fg.film_id, fg.genre_id, g.name AS genre_name " +
+                "FROM film_genres fg " +
+                "LEFT JOIN genres g ON fg.genre_id = g.genre_id " +
+                "ORDER BY fg.film_id ASC";
 
-        String sql = "SELECT g.* FROM GENRES g " +
-                "JOIN film_genres fg ON fg.genre_id = g.genre_id " +
-                "WHERE fg.film_id = ?";
+        List<FilmGenreInfo> filmGenresInfo = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            FilmGenreInfo info = new FilmGenreInfo();
+            info.setFilmId(rs.getLong("film_id"));
 
-        List<Genre> genres = jdbcTemplate.query(sql, genreRowMapper, film.getId());
-        return new HashSet<>(genres);
+            FilmGenres filmGenres = new FilmGenres();
+            filmGenres.setFilmId(rs.getLong("film_id"));
+            filmGenres.setGenreId(rs.getObject("genre_id", Integer.class));
+            info.setFilmGenres(filmGenres);
+
+            if (rs.getObject("genre_id") != null) {
+                Genre genre = new Genre(
+                        rs.getInt("genre_id"),
+                        rs.getString("genre_name")
+                );
+                info.setGenre(genre);
+            }
+
+            return info;
+        });
+
+        Map<Long, List<Genre>> filmGenresMap = filmGenresInfo.stream()
+                .filter(info -> info.getGenre() != null)
+                .collect(Collectors.groupingBy(
+                        FilmGenreInfo::getFilmId,
+                        Collectors.mapping(FilmGenreInfo::getGenre, Collectors.toList())
+                ));
+
+        films.forEach(film -> {
+            List<Genre> genres = filmGenresMap.get(film.getId());
+            if (genres != null) {
+                film.getGenres().addAll(genres);
+            }
+        });
     }
 
     public List<Genre> findGenresByIds(Collection<Integer> genreIds) {

@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FilmGenres {
+public class FilmGenreInfo {
     private Long filmId;
-    private Integer genreId;
-
+    private FilmGenres filmGenres;
+    private Genre genre;
 }

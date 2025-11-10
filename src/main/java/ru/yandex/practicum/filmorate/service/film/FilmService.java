@@ -33,7 +33,7 @@ public class FilmService {
         Film film = filmStorage.findById(filmId).orElseThrow(() ->
                 new NotFoundException("фильм с id не найден"));
 
-        film.setGenres(genreDbStorage.findAllGenresByFilm(film));
+        genreDbStorage.setGenresToFilms(List.of(film));
         log.info("Найден фильм : {}", film);
         return film;
     }
@@ -41,9 +41,7 @@ public class FilmService {
     public List<Film> findAll() {
         log.info("Запрос в сервис на получение всех фильмов");
         List<Film> films = filmStorage.findAll();
-        for (Film film : films) {
-            film.setGenres(genreDbStorage.findAllGenresByFilm(film));
-        }
+        genreDbStorage.setGenresToFilms(films);
         log.info("Список фильмов: {}", films);
         return films;
     }

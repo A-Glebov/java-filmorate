@@ -32,14 +32,18 @@ public class FilmService {
         log.info("Запрос в сервис на получение фильма id {} -> ", filmId);
         Film film = filmStorage.findById(filmId).orElseThrow(() ->
                 new NotFoundException("фильм с id не найден"));
-        log.info("Найден фильм : {}", film.toString());
+
+        film.setGenres(genreDbStorage.findAllGenresByFilm(film));
+        log.info("Найден фильм : {}", film);
         return film;
     }
 
     public List<Film> findAll() {
         log.info("Запрос в сервис на получение всех фильмов");
         List<Film> films = filmStorage.findAll();
-        genreDbStorage.findAllGenresByFilm(films);
+        for (Film film : films) {
+            film.setGenres(genreDbStorage.findAllGenresByFilm(film));
+        }
         log.info("Список фильмов: {}", films);
         return films;
     }

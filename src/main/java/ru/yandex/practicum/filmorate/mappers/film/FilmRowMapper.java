@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
@@ -27,8 +26,6 @@ public class FilmRowMapper implements RowMapper<Film> {
         mpa.setId(resultSet.getInt("rating_id"));
         mpa.setName(resultSet.getString("rating"));
         film.setMpa(mpa);
-        log.info("Обработка списка жанров в FilmRowMapper");
-        film.setGenres(Genre.parseGenresFromString(resultSet.getString("genres")));
         log.info("Фильм после обработки  FilmRowMapper -> {}", film);
         log.info("FilmRowMapper finish");
         return film;

@@ -59,11 +59,8 @@ public class FilmDbStorage implements FilmStorage {
     public Optional<Film> findById(long filmId) {
         log.info("Запрос в хранилище на поиск фильма filmId: {}", filmId);
         String query = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, m.rating_id, m.name AS rating, " +
-                "GROUP_CONCAT(g.genre_id || ':' || g.name SEPARATOR ',') AS genres " +
                 "FROM films f " +
                 "LEFT JOIN mpa m ON f.rating_id = m.rating_id " +
-                "LEFT JOIN film_genres fg ON f.film_id = fg.film_id " +
-                "LEFT JOIN genres g ON fg.genre_id = g.genre_id " +
                 "WHERE f.film_id = ? " +
                 "GROUP BY f.film_id";
 
@@ -78,7 +75,7 @@ public class FilmDbStorage implements FilmStorage {
                 return Optional.of(results.getFirst());
             }
         } catch (Exception e) {
-            log.info("ОШИБКА СОХРАНЕНИЯ В ХРАНИЛИЩЕ");
+            log.info("Ошибка поиска фильма по id");
             return Optional.empty();
         }
     }

@@ -10,9 +10,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.function.UnaryOperator.identity;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -38,17 +35,15 @@ public class GenreDbStorage {
 
     }
 
-    public void findAllGenresByFilm(List<Film> films) {
+    public HashSet<Genre> findAllGenresByFilm(Film film) {
         log.info("Работает GenreDbStorage.findAllGenresByFilm");
-        final Map<Long, Film> filmById = films.stream().collect(Collectors.toMap(Film::getId, identity()));
 
         String sql = "SELECT g.* FROM GENRES g " +
                 "JOIN film_genres fg ON fg.genre_id = g.genre_id " +
-                "WHERE fg.film_id IN (%s)";
+                "WHERE fg.film_id = ?";
 
-        String inSql = String.join(",", Collections.nCopies(films.size(), "?"));
-        jdbcTemplate.query(String.format(sql, inSql),
-                filmById.keySet().toArray(), genreRowMapper);
+        List<Genre> genres = jdbcTemplate.query(sql, genreRowMapper, film.getId());
+        return new HashSet<>(genres);
     }
 
     public List<Genre> findGenresByIds(Collection<Integer> genreIds) {

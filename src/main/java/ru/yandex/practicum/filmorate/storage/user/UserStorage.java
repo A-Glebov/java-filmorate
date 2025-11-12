@@ -11,10 +11,9 @@ public interface UserStorage {
 
     User create(User user);
 
-    User delete(User user);
-
     User save(User user);
 
     Optional<User> findById(long userId);
+
 
 }
